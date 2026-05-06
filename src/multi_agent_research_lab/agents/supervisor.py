@@ -22,8 +22,10 @@ class SupervisorAgent(BaseAgent):
             state.record_route("researcher")
         elif not state.analysis_notes:
             state.record_route("analyst")
-        elif not state.final_answer:
+        elif not state.final_answer or (state.critic_feedback and not state.is_approved):
             state.record_route("writer")
+        elif not state.is_approved:
+            state.record_route("critic")
         else:
             state.record_route("done")
             

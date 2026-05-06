@@ -95,10 +95,10 @@ def benchmark_all(
             st = ResearchState(request=ResearchQuery(query=query_str))
             resp = llm.complete("You are a helpful research assistant. Answer the user query clearly.", query_str)
             st.final_answer = resp.content
+            st.add_trace_event("baseline_call", {"cost_usd": resp.cost_usd})
             return st
             
         _, b_metrics = run_benchmark(f"Q{i+1} Baseline", q, run_baseline)
-        b_metrics.quality_score = 6.5
         b_metrics.notes = "Baseline run"
         metrics.append(b_metrics)
         
@@ -108,8 +108,7 @@ def benchmark_all(
             return workflow.run(st)
             
         _, m_metrics = run_benchmark(f"Q{i+1} Multi-Agent", q, run_multi)
-        m_metrics.quality_score = 9.0
-        m_metrics.notes = "Multi-agent run"
+        m_metrics.notes = "Multi-agent run with Critic"
         metrics.append(m_metrics)
         
     report = render_markdown_report(metrics)
@@ -118,6 +117,13 @@ def benchmark_all(
     report += "\n## 2. Failure Mode và Cách Fix\n\n"
     report += "**Failure Mode:**\nĐôi khi API tìm kiếm trả về thông tin không liên quan, hoặc giới hạn query limit khiến Researcher không có dữ liệu. Do đó, Final Answer của Writer bị thiếu hụt hoặc phải bịa ra. Hoặc hệ thống bị rơi vào infinite loop (Researcher -> Analyst -> Researcher...) nếu Agent router đưa ra quyết định lặp lại do thiếu dữ kiện.\n\n"
     report += "**Cách Fix:**\n- Thêm cơ chế Fallback (dùng mock search data) nếu API fail.\n- Thêm Guardrail (timeout, max iterations) trong `SupervisorAgent` để bắt buộc dừng nếu đi qua quá nhiều vòng lặp (đã implement).\n- Prompts cần chặt chẽ: Dạy cho Writer biết rằng 'nếu không có thông tin từ notes, hãy nói rằng không tìm thấy, không được tự động bịa ra'.\n"
+
+    # Add Exit Ticket answers
+    report += "\n## 3. Exit Ticket\n\n"
+    report += "**1. Case nào nên dùng multi-agent? Vì sao?**\n"
+    report += "Nên dùng multi-agent cho các bài toán phức tạp (complex tasks) đòi hỏi nhiều bước xử lý, phân quyền rõ ràng, và cần kết hợp nhiều công cụ hoặc vai trò chuyên biệt (như tìm kiếm thông tin chuyên sâu, phân tích dữ liệu, viết báo cáo tổng hợp). Vì mỗi agent có thể được tối ưu prompt và context riêng biệt (giảm hallucination), và dễ dàng quản lý state cũng như debug khi có lỗi ở một bước cụ thể.\n\n"
+    report += "**2. Case nào không nên dùng multi-agent? Vì sao?**\n"
+    report += "Không nên dùng multi-agent cho các bài toán đơn giản (như simple QA, summarization ngắn), các tác vụ tra cứu nhanh, hoặc khi hệ thống có yêu cầu nghiêm ngặt về độ trễ cực thấp (low latency). Vì hệ thống multi-agent sẽ gây ra overhead lớn về số lượng token (do phải truyền state qua lại giữa các agent), làm tăng chi phí API và kéo dài thời gian chờ (wall-clock time cao).\n"
     
     with open("reports/benchmark_report.md", "w", encoding="utf-8") as f:
         f.write(report)

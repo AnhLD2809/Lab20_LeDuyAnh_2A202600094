@@ -27,4 +27,5 @@ class ResearcherAgent(BaseAgent):
             user_prompt=prompt
         )
         state.research_notes = response.content
+        state.add_trace_event("researcher", {"cost_usd": response.cost_usd})
         return state

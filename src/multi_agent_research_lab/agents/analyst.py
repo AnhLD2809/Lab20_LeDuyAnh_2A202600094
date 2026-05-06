@@ -17,8 +17,9 @@ class AnalystAgent(BaseAgent):
         prompt = f"Research Notes: {state.research_notes}"
         
         response = llm.complete(
-            system_prompt="You are an analyst. Extract key claims, compare viewpoints, and flag weak evidence from the notes.",
+            system_prompt="You are an analyst. Extract key themes and logical connections from the research notes.",
             user_prompt=prompt
         )
         state.analysis_notes = response.content
+        state.add_trace_event("analyst", {"cost_usd": response.cost_usd})
         return state

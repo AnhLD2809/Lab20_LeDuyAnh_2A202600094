@@ -8,11 +8,12 @@ Dự án này là bài Lab hoàn thiện về **Multi-Agent Systems**, được 
    - `ResearcherAgent`: Sử dụng `Tavily` (hoặc Mock Data) để thu thập dữ liệu web và tóm tắt thành các `research_notes`.
    - `AnalystAgent`: Đọc `research_notes` để suy luận, phân tích chéo và trích xuất `analysis_notes`.
    - `WriterAgent`: Tổng hợp dữ liệu thành câu trả lời cuối cùng (`final_answer`) có đánh dấu trích dẫn đầy đủ.
+   - `CriticAgent`: Tự động review lại `final_answer` để kiểm tra chất lượng. Nếu chưa đạt, sẽ trả về `critic_feedback` để `WriterAgent` viết lại.
 2. **Xây dựng hệ thống điều phối (Supervisor / Router)**: 
-   - Điều hướng (routing) các Agent tuần tự dựa trên logic của LangGraph.
+   - Điều hướng (routing) các Agent tuần tự dựa trên logic của LangGraph, tích hợp vòng lặp Writer <-> Critic.
    - Thêm Guardrails (Giới hạn vòng lặp `max_iterations`, Fallbacks).
 3. **Cấu hình LLM & Search Client thực tế**:
-   - Tích hợp thành công `openai` qua `LLMClient` để chạy mô hình `gpt-4o-mini`.
+   - Tích hợp thành công `openai` qua `LLMClient` để chạy mô hình `gpt-4o-mini` với JSON mode cho Critic.
    - Tích hợp LangSmith qua `langsmith.wrappers` để tự động Trace từng token và node.
 4. **Viết công cụ Benchmark đa truy vấn (Multi-Query Benchmark)**:
    - Viết lệnh CLI mới `benchmark-all` giúp đọc một loạt danh sách câu hỏi từ `configs/lab_default.yaml`.
@@ -27,7 +28,8 @@ User Query
 Supervisor / Router (LangGraph)
    |------> Researcher Agent  -> Tạo research_notes (Sử dụng Tavily)
    |------> Analyst Agent     -> Tạo analysis_notes
-   |------> Writer Agent      -> Tạo final_answer
+   |------> Writer Agent      -> Tạo final_answer (Nhận feedback từ Critic nếu có)
+   |------> Critic Agent      -> Tạo critic_feedback và is_approved
    |
    v
 Trace (LangSmith) + Benchmark Report

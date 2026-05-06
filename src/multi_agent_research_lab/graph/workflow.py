@@ -17,6 +17,7 @@ class MultiAgentWorkflow:
         from multi_agent_research_lab.agents.researcher import ResearcherAgent
         from multi_agent_research_lab.agents.analyst import AnalystAgent
         from multi_agent_research_lab.agents.writer import WriterAgent
+        from multi_agent_research_lab.agents.critic import CriticAgent
         
         class StateDict(TypedDict):
             state: ResearchState
@@ -31,11 +32,14 @@ class MultiAgentWorkflow:
             return {"state": AnalystAgent().run(data["state"])}
         def run_writer(data: StateDict):
             return {"state": WriterAgent().run(data["state"])}
+        def run_critic(data: StateDict):
+            return {"state": CriticAgent().run(data["state"])}
             
         workflow.add_node("supervisor", run_supervisor)
         workflow.add_node("researcher", run_researcher)
         workflow.add_node("analyst", run_analyst)
         workflow.add_node("writer", run_writer)
+        workflow.add_node("critic", run_critic)
         
         workflow.add_edge(START, "supervisor")
         
@@ -52,6 +56,7 @@ class MultiAgentWorkflow:
         workflow.add_edge("researcher", "supervisor")
         workflow.add_edge("analyst", "supervisor")
         workflow.add_edge("writer", "supervisor")
+        workflow.add_edge("critic", "supervisor")
         
         return workflow.compile()
 
