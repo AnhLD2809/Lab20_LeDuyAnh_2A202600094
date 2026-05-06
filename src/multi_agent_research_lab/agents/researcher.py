@@ -11,9 +11,20 @@ class ResearcherAgent(BaseAgent):
     name = "researcher"
 
     def run(self, state: ResearchState) -> ResearchState:
-        """Populate `state.sources` and `state.research_notes`.
-
-        TODO(student): Implement search, source filtering, citation capture, and notes.
-        """
-
-        raise StudentTodoError("TODO(student): implement ResearcherAgent.run")
+        from multi_agent_research_lab.services.llm_client import LLMClient
+        from multi_agent_research_lab.services.search_client import SearchClient
+        
+        search_client = SearchClient()
+        sources = search_client.search(state.request.query, max_results=state.request.max_sources)
+        state.sources.extend(sources)
+        
+        llm = LLMClient()
+        sources_text = "\n".join([f"- {s.title}: {s.snippet}" for s in sources])
+        prompt = f"Query: {state.request.query}\nSources:\n{sources_text}"
+        
+        response = llm.complete(
+            system_prompt="You are a researcher. Summarize the sources into concise research notes.",
+            user_prompt=prompt
+        )
+        state.research_notes = response.content
+        return state

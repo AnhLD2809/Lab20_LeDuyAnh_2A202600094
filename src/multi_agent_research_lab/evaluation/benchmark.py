@@ -11,10 +11,9 @@ Runner = Callable[[str], ResearchState]
 
 
 def run_benchmark(run_name: str, query: str, runner: Runner) -> tuple[ResearchState, BenchmarkMetrics]:
-    """Measure latency and return a placeholder metric object.
-
-    TODO(student): Add quality scoring, estimated token cost, citation coverage, and error rate.
-    """
+    # In a real implementation, we would use an LLM-as-a-judge to evaluate quality
+    # and calculate total token cost from state.agent_results or state.trace.
+    # For this lab starter, we provide a placeholder.
 
     started = perf_counter()
     state = runner(query)
